@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>  <!-- QR Code Library -->
+    <link rel="stylesheet" type="text/css" href="CSS.css">
+</head>
+<body>
+    <h1>Update Profile</h1>
+    <form action="/save-profile" method="POST" enctype="multipart/form-data">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required><br><br>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required><br><br>
+
+        <label for="grade">Grade:</label>
+        <input type="text" id="grade" name="grade" required><br><br>
+
+        <label for="section">Section:</label>
+        <input type="text" id="section" name="section" required><br><br>
+
+        <label for="profilePicture">Profile Picture:</label>
+        <input type="file" id="profilePicture" name="profilePicture"><br><br>
+
+        <button type="submit">Save Profile</button>
+    </form>
+
+    <script>
+        // ✅ Dynamically get the current host
+        const apiBaseUrl = window.location.origin;
+
+        // ✅ Function to fetch and display profile data
+        async function loadProfile() {
+            const params = new URLSearchParams(window.location.search);
+            document.getElementById('display-name').innerText = params.get("name") || "N/A";
+            document.getElementById('display-email').innerText = params.get("email") || "N/A";
+            document.getElementById('display-grade').innerText = params.get("grade") || "N/A";
+            document.getElementById('display-section').innerText = params.get("section") || "N/A";
+        }
+
+        // ✅ Generate QR Code
+        document.getElementById('generate-qr').addEventListener('click', function() {
+            const qrCodeContainer = document.getElementById('qr-code-container');
+            qrCodeContainer.innerHTML = '';  // Clear previous QR code
+
+           const cloudflareUrl = window.location.origin;
+
+}
+
+document.getElementById('generate-qr').addEventListener('click', async function() {
+    const qrCodeContainer = document.getElementById('qr-code-container');
+    qrCodeContainer.innerHTML = '';  
+
+    const profileUrl = `${cloudflareUrl}${window.location.pathname}`;
+    const profileUrl = `${ngrokUrl}${window.location.pathname}`;
+
+    QRCode.toCanvas(qrCodeContainer, profileUrl, function(error) {
+        if (error) {
+            console.error(error);
+        } else {
+            console.log('✅ QR code generated with ngrok URL!');
+        }
+    });
+});
+
+
+            QRCode.toCanvas(qrCodeContainer, profileUrl, function(error) {
+                if (error) {
+                    console.error(error);
+                } else {
+                    console.log('QR code generated successfully!');
+                }
+            });
+        });
+
+        // ✅ Load and display messages dynamically
+        async function loadMessages() {
+            try {
+                const response = await fetch(`${apiBaseUrl}/messages`);
+                const messages = await response.json();
+                const messageBox = document.getElementById('message-box');
+
+                messageBox.innerHTML = ''; // Clear old messages
+                messages.forEach(msg => {
+                    const messageElement = document.createElement('p');
+                    messageElement.innerHTML = `<strong>${msg.sender}</strong>: ${msg.text} <small>(${msg.timestamp})</small>`;
+                    messageBox.appendChild(messageElement);
+                });
+
+                messageBox.scrollTop = messageBox.scrollHeight; // Auto-scroll to latest message
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        // ✅ Handle message sending
+        document.getElementById('message-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const messageInput = document.getElementById('message-input').value;
+            const sender = document.getElementById('display-name').innerText || "Anonymous";
+
+            try {
+                const response = await fetch(`${apiBaseUrl}/message`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sender, text: messageInput })
+                });
+
+                if (response.ok) {
+                    document.getElementById('message-status').innerText = 'Message sent!';
+                    document.getElementById('message-input').value = '';
+                    loadMessages(); // Reload messages
+                } else {
+                    document.getElementById('message-status').innerText = 'Failed to send message.';
+                }
+            } catch (error) {
+                console.error('Error sending message:', error);
+            }
+        });
+
+        // ✅ Auto-refresh messages every 3 seconds
+        setInterval(loadMessages, 3000);
+        loadProfile(); // Load profile data on page load
+        loadMessages(); // Load messages on page load
+    </script>
+</body>
+</html>
